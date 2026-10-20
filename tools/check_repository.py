@@ -19,6 +19,18 @@ PATTERNS = [
 ]
 
 
+def is_documentation_image(path, data):
+    """Type/size guard for reviewed assets, not a pixel-level privacy scan."""
+    path = Path(path)
+    if path.parts[:2] != ('docs', 'images') or len(path.parts) != 3 or len(data) > 1_000_000:
+        return False
+    if path.suffix.lower() == '.png':
+        return data.startswith(b'\x89PNG\r\n\x1a\n') and data.endswith(b'IEND\xaeB`\x82')
+    if path.suffix.lower() in ('.jpg', '.jpeg'):
+        return data.startswith(b'\xff\xd8\xff') and data.endswith(b'\xff\xd9')
+    return False
+
+
 def check():
     paths = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode('utf-8').split('\0')
     failures = []
@@ -34,6 +46,8 @@ def check():
             continue
         if file.stat().st_size > 1_000_000:
             failures.append(name + ': unexpected large source file')
+            continue
+        if is_documentation_image(path, file.read_bytes()):
             continue
         try:
             body = file.read_text(encoding='utf-8-sig')
