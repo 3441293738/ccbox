@@ -14,7 +14,8 @@ from app.storage import POINTER, atomic_json, data_location, migration_target, c
 class StorageTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.base = Path(self.tmp.name)
+        # Windows TEMP may use an 8.3 alias; compare canonical fixture paths.
+        self.base = Path(self.tmp.name).resolve()
         self.root = self.base / 'bundle'
         self.c = Controller(self.root)
         self.c.data.mkdir(parents=True)

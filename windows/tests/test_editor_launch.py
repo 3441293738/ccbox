@@ -14,7 +14,8 @@ from app.editor_launch import attach_uri, configure_client, open_client, EXTENSI
 class EditorLaunchTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.base = Path(self.tmp.name)
+        # Windows TEMP may use an 8.3 alias; compare canonical fixture paths.
+        self.base = Path(self.tmp.name).resolve()
         self.name = '/ccbox2-test-sandbox-1'
 
     def tearDown(self):

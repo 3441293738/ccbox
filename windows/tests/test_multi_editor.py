@@ -18,7 +18,8 @@ class MultiEditorTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.base = Path(self.tmp.name)
+        # Windows TEMP may use an 8.3 alias; compare canonical fixture paths.
+        self.base = Path(self.tmp.name).resolve()
         self.c = Controller(self.base / 'bundle')
         for name in ('one', 'two'):
             (self.base / name).mkdir()

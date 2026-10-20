@@ -15,7 +15,8 @@ from app.editor_paths import EditorDirectoryError, normalize_editor_directory
 class EditorPathTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.base = Path(self.tmp.name)
+        # Windows TEMP may use an 8.3 alias; compare canonical fixture paths.
+        self.base = Path(self.tmp.name).resolve()
         self.controller = Controller(self.base / 'bundle')
         self.controller.data.mkdir(parents=True)
         self.controller.file.write_text('{"name":"test"}', encoding='utf-8')
@@ -52,6 +53,19 @@ class EditorPathTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(EditorDirectoryError) as caught:
                 normalize_editor_directory(value)
             self.assertEqual(caught.exception.key, 'vscode_dir')
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows short-path API')
+    def test_windows_short_path_normalizes_to_same_directory(self):
+        import ctypes
+        self.custom.mkdir(parents=True)
+        get_short = ctypes.windll.kernel32.GetShortPathNameW
+        get_short.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
+        get_short.restype = ctypes.c_uint32
+        buffer = ctypes.create_unicode_buffer(32768)
+        size = get_short(str(self.custom), buffer, len(buffer))
+        self.assertGreater(size, 0)
+        self.assertLess(size, len(buffer))
+        self.assertEqual(normalize_editor_directory(buffer.value), str(self.custom.resolve()))
 
     def test_file_and_file_parent_are_rejected(self):
         f = self.base / 'not-a-directory'
