@@ -2,7 +2,6 @@
   <img src="docs/images/banner.svg" alt="CCBOX：选择独立空间，选择项目文件，打开沙箱 VS Code" width="100%">
 </p>
 
-<a id="ccbox"></a>
 <h1 align="center">CCBOX</h1>
 <p align="center"><strong>给 Claude Code 配一个独立开发空间。选好账号和项目，开始开发。</strong></p>
 <p align="center">
