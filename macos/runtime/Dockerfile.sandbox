@@ -1,0 +1,32 @@
+FROM node:22-bookworm-slim
+ARG CLAUDE_VERSION=latest
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl git openssh-client ripgrep python3 locales tzdata \
+    firefox-esr xvfb x11vnc openbox novnc websockify xclip dbus-x11 \
+    fonts-liberation fonts-droid-fallback fonts-noto-color-emoji libnss3 libgbm1 libsecret-1-0 \
+    && sed -i '/en_US.UTF-8/s/^# //; /en_GB.UTF-8/s/^# //; /ja_JP.UTF-8/s/^# //' /etc/locale.gen \
+    && locale-gen && rm -rf /var/lib/apt/lists/*
+# A common CJK fallback retains Chinese text without a locale-specific SC/TC font set.
+# Emoji glyph coverage is independent of any third-party UA-based risk score.
+RUN npm install -g --loglevel=info --foreground-scripts "@anthropic-ai/claude-code@${CLAUDE_VERSION}" \
+    && claude --version && npm cache clean --force
+# The upstream Node image already owns uid 1000. Reuse it rather than creating a collision.
+RUN usermod -l claude -d /home/claude node && groupmod -n claude node \
+    && mkdir -p /home/claude /desktop /ipc /workspace /usr/lib/firefox-esr/distribution \
+    && chown 1000:1000 /home/claude /desktop /workspace
+COPY transport.py bridge.py clipboard_transfer.py supervisor.py audit.py browser-check.html sandbox_editor.py window_restore.py /opt/ccbox/
+LABEL io.ccbox.desktop-editor="2"
+COPY firefox-policies.json /usr/lib/firefox-esr/distribution/policies.json
+COPY browser-open /usr/local/bin/ccbox-browser
+RUN chmod 755 /usr/local/bin/ccbox-browser \
+    && ln -s /usr/local/bin/ccbox-browser /usr/local/bin/xdg-open
+ENV HOME=/home/claude USER=claude LOGNAME=claude DISPLAY=:99 \
+    LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 TZ=America/New_York \
+    BROWSER=/usr/local/bin/ccbox-browser DISABLE_AUTOUPDATER=1 \
+    HTTP_PROXY=http://127.0.0.1:18080 HTTPS_PROXY=http://127.0.0.1:18080 \
+    http_proxy=http://127.0.0.1:18080 https_proxy=http://127.0.0.1:18080 \
+    NO_PROXY=localhost,127.0.0.1,::1 no_proxy=localhost,127.0.0.1,::1
+USER 1000:1000
+WORKDIR /workspace
+CMD ["python3", "/opt/ccbox/supervisor.py"]

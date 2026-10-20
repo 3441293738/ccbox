@@ -1,0 +1,3 @@
+#!/bin/sh
+# Open OAuth URLs in the isolated browser, not in a host browser.
+exec firefox-esr --profile "$HOME/browser" --new-tab "${1:-file:///opt/ccbox/browser-check.html}"

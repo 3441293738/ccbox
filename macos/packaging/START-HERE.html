@@ -1,0 +1,12 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>CCBOX 0.3.0 · 开始使用</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{font:17px/1.8 system-ui,sans-serif;max-width:760px;margin:60px auto;padding:0 24px;color:#22332b;background:#f4f8f5}h1,h2{line-height:1.4}li{margin:12px 0}aside{border-left:4px solid #ab8036;padding:8px 20px;background:#fff8e9}a{color:#156647}</style>
+<h1>CCBOX 0.3.0 · 开始使用</h1><p>选账号、选项目，打开独立开发空间。已打包版本自带 Python，无需自行制作。</p>
+<ol><li>安装并启动 Docker Desktop，使用 Linux 容器。Mac 选择 Apple silicon 版本。</li><li>Windows 完整解压后双击 CCBOX.exe，保留旁边的 runtime；Mac 将 CCBOX.app 放入应用程序。</li><li>在 CCBOX 选择独立空间、项目目录和代理，保存并测试。</li><li>保持默认“沙箱开发”，点击“打开 / 恢复 VS Code”。首次镜像和编辑器下载需要等待。</li><li>核对自己的项目可信后，在沙箱内完成 Claude 官方登录。授权网页使用该沙箱浏览器。</li></ol>
+<h2>需要已有 JDK、Maven 或 Node？</h2><p>选中项目后切换“本机开发”。CCBOX 需要保持打开；每条本机命令先显示完整内容，由你确认一次才执行。Claude 登录与模型继续在容器；普通 Bash 仍在容器，不会透明改成本机命令。首次启用后新建 Claude 会话或重新连接 ccbox-host MCP。</p>
+<aside><strong>本机模式的权限</strong><p>本机命令与项目脚本拥有当前用户权限，可能读取系统信息、凭据文件及其他目录，输出可进入模型上下文。本机命令使用本机网络，不自动继承模型代理。工作目录不是系统隔离。切换账号、项目、模式或关闭 CCBOX 会断开本机通道并停止托管任务，不回滚已有修改。</p></aside>
+<h2>日常操作</h2><p>最小化后点桌面顶部“恢复 VS Code”；编辑器已关闭则回 CCBOX 点“打开 / 恢复 VS Code”。“发送文字 / 图片”在你明确确认后写入沙箱剪贴板，再到沙箱输入框按 Ctrl+V；不会自动发送消息或同步宿主剪贴板。</p>
+<h2>更新与资料</h2><p>停止空间保留 Docker 登录卷。Windows 更新时保留 data 和 storage-location.json，将程序与 runtime 合并回原目录；Mac 替换 App，保留 Application Support 和钥匙串。工具数据、系统保险库、Docker 卷和项目需分别备份。现有桌面环境启用本机模式无需重建；旧沙箱缺组件时按“检查与修复”提示保存工作后升级。</p>
+<h2>签名与验证范围</h2><p>Mac 为原生 ARM64，当前 ad-hoc 签名、未 Apple 公证；Windows 未 Authenticode 签名。首次打开请核对来源与 SHA-256，按系统提示确认，不要关闭整体安全检查。CI 检查单元测试、打包与解压后的 GUI 自检；不包含真实账号登录、付费模型请求、完整 Docker 链路或真实 Mac 钥匙串持久化。</p>
+<p>本工具不是官方产品，不保证匿名性或账号状态。共享项目可被读取与修改；同一容器用户下应用互信。</p>
+<p><a href="https://github.com/3441293738/ccbox">项目源码与文档</a> · <a href="https://github.com/3441293738/ccbox/blob/main/docs/使用指南.md">完整使用指南</a></p></html>

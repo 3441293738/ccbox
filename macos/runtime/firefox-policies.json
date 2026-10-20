@@ -1,0 +1,27 @@
+{
+  "policies": {
+    "DisableAppUpdate": true,
+    "DisableTelemetry": true,
+    "DisableFirefoxAccounts": true,
+    "DisablePocket": true,
+    "DisablePasswordReveal": true,
+    "OfferToSaveLogins": false,
+    "DontCheckDefaultBrowser": true,
+    "Proxy": {
+      "Mode": "manual", "Locked": true,
+      "HTTPProxy": "127.0.0.1:18080", "SSLProxy": "127.0.0.1:18080",
+      "Passthrough": "localhost, 127.0.0.1, ::1"
+    },
+    "DNSOverHTTPS": {"Enabled": false, "Locked": true},
+    "Preferences": {
+      "media.peerconnection.enabled": {"Value": false, "Status": "locked"},
+      "network.dns.disablePrefetch": {"Value": true, "Status": "locked"},
+      "network.prefetch-next": {"Value": false, "Status": "locked"},
+      "network.http.speculative-parallel-limit": {"Value": 0, "Status": "locked"},
+      "network.proxy.failover_direct": {"Value": false, "Status": "locked"},
+      "network.trr.mode": {"Value": 5, "Status": "locked"},
+      "network.proxy.allow_hijacking_localhost": {"Value": false, "Status": "locked"},
+      "intl.accept_languages": {"Value": "en-US,en", "Status": "locked"}
+    }
+  }
+}

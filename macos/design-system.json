@@ -1,0 +1,73 @@
+{
+  "name": "CCBOX Studio / UI refresh",
+  "source_skill": "ui-ux-pro-max",
+  "verified_product_match": "Developer Tool / IDE; Dark Mode + Minimalism; Real-Time Monitor + Terminal",
+  "discarded_recommendation": "FAQ/Documentation Landing was not applicable to this desktop app",
+  "stack": "Python Tkinter + CustomTkinter 6.0.0",
+  "direction": "Graphite surfaces, mint primary action, restrained engineering console",
+  "font": "Microsoft YaHei UI / Cascadia Code; local fonts, no remote font requests",
+  "spacing": [
+    4,
+    8,
+    12,
+    16,
+    24,
+    32
+  ],
+  "radius": {
+    "input": 8,
+    "button": 9,
+    "card": 14
+  },
+  "interaction": [
+    "visible focus",
+    "Tab + Enter/Space",
+    "inline field errors",
+    "explicit unsaved state",
+    "collapsible logs",
+    "single worker with disabled inputs",
+    "bounded error summary with show-log action"
+  ],
+  "startup_fix_guidance": {
+    "query": "error clarity recovery",
+    "domain": "ux",
+    "verified_match": "Feedback / Error Recovery / All platforms; specific next step and accessible details"
+  },
+  "motion": "No decorative animation; indeterminate progress only during a running task",
+  "truthful_status": "Never equate configured, connected, running and verified states",
+  "desktop_test_targets": [
+    "980x700",
+    "1240x900",
+    "150% widget scaling"
+  ],
+  "accessibility_note": "Keyboard and contrast tests do not constitute a screen-reader or WCAG certification",
+  "multi_environment_02_5": {
+    "verified_query": "confirmation destructive action / ux / Interaction - Confirmation Dialogs",
+    "design": "Persistent top environment selector, contextual window title, repeatable project cards, no new pages",
+    "checks": [
+      "Discard-unsaved confirmation",
+      "No credential cloning",
+      "All controls locked while busy",
+      "Clear/reset prior environment test results",
+      "Confirm mount removal without deleting files"
+    ]
+  },
+  "sandbox_editor_02_6": {
+    "query": "desktop primary action progress feedback / ux",
+    "verified_match": "Feedback / Progress Indicators / All",
+    "design": "Primary sandbox editor card; legacy host connection explicitly labeled; four preparation stages; picture-only viewer with explicit clipboard action",
+    "confirmation": "First preparation/recovery explains restart and Electron inner-sandbox limitation; no automatic workspace trust"
+  },
+  "beginner_02_7": {
+    "verified_skill_match": "Onboarding / User Freedom / All: guide is optional; navigation stays available.",
+    "progressive_disclosure_source": "Built-in Forms & Feedback defaults. Targeted search returned no applicable progressive-disclosure match; typography result not used.",
+    "design": "One primary guided-start action; separate projects/proxy pages; persistent environment selector; advanced settings collapsed; explicit destructive/restart confirmations.",
+    "visual_review": "Homepage inspected at 1120x850. Further Windows UI inspection stopped by user Escape; no full-page or screen-reader certification."
+  },
+  "macos_preview": {
+    "inherited_layout": "02.7 beginner UI; no redesign",
+    "native_adaptation": "PingFang SC / Menlo, Command-S / Command-1..4, persistent data outside app bundle",
+    "guidance": "General built-in platform-adaptive and keyboard-shortcuts rules. Search returned no applicable desktop-specific match; web/mobile results not persisted as verified guidance.",
+    "mac_visual_validation": "Pending native Mac; Windows fixture widget smoke is not native Mac validation."
+  }
+}

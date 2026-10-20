@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>CCBOX · Browser checks</title>
+<style>body{background:#101624;color:#f1f5f9;font:18px system-ui;max-width:900px;margin:64px auto;padding:24px}h1{font-size:36px}small,p{color:#b9c6da;line-height:1.7}pre{padding:24px;background:#1b2538;border:1px solid #64748b;border-radius:12px;white-space:pre-wrap}a{color:#86efac}</style>
+<small>CCBOX / ISOLATED BROWSER</small><h1>Your browser, inside the box.</h1>
+<p>This page runs locally inside the sandbox. These are observed browser values, not a ban-risk score.</p>
+<pre id="result"></pre><p><a href="https://api.ipify.org?format=json">Check HTTPS exit IP</a> · <a href="about:policies">Inspect Firefox policies</a></p>
+<p>CLI sign-in should open here. If it prints a URL instead, paste that URL into this browser's address bar. The host browser only displays this remote screen.</p>
+<script>document.querySelector('#result').textContent=JSON.stringify({language:navigator.language,languages:navigator.languages,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,platform:navigator.platform,userAgent:navigator.userAgent,WebRTC:typeof RTCPeerConnection==='undefined'?'DISABLED':'AVAILABLE — check policy',resolution:screen.width+' × '+screen.height},null,2);</script></html>

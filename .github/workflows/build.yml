@@ -1,0 +1,105 @@
+name: 测试、打包与发布
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '发布标签（例如 v0.3.0）；留空只打包'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ccbox-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: 构建 ${{ matrix.platform }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-2022
+            architecture: x64
+          - platform: macos
+            os: macos-15
+            architecture: arm64
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+    steps:
+      - name: 检出源码
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 准备原生 Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          architecture: ${{ matrix.architecture }}
+      - name: 检查源码边界
+        run: python tools/check_repository.py
+      - name: 验证发布校验器
+        run: python -m unittest discover -s tests -v
+      - name: 安装构建依赖
+        run: python -m pip install -r ${{ matrix.platform }}/requirements.txt pyinstaller==6.22.3
+      - name: 单元测试、原生打包及解压自检
+        run: python ${{ matrix.platform }}/packaging/build_${{ matrix.platform }}.py --output ${{ matrix.platform }}/release
+      - name: 上传已验证产物
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: CCBOX-${{ matrix.platform }}
+          path: ${{ matrix.platform }}/release/*
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+      - name: 上传构建诊断（无真实账号测试）
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: diagnostics-${{ matrix.platform }}
+          path: |
+            ${{ matrix.platform }}/.windows-build/build-*/logs/
+            ${{ matrix.platform }}/.mac-build/cloud-*/logs/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+
+  publish:
+    name: 发布双平台版本
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: CCBOX-*
+          path: artifacts
+      - name: 核对版本并发布
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RELEASE_TAG" = "v$(tr -d '\r\n' < VERSION)"
+          python tools/prepare_release.py artifacts release-assets "$GITHUB_SHA"
+          gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "CCBOX $RELEASE_TAG · 双平台开源版" --notes-file docs/发行说明.md --draft
+          gh release upload "$RELEASE_TAG" release-assets/*
+          gh release edit "$RELEASE_TAG" --draft=false --latest

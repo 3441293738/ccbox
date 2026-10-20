@@ -1,0 +1,29 @@
+name: 问题反馈
+description: 提交脱敏复现，帮助定位问题
+body:
+  - type: markdown
+    attributes:
+      value: 请勿发送账号、密码、代理完整链接、生产地址或登录卷。安全漏洞请使用 Security 私密报告。
+  - type: input
+    id: version
+    attributes:
+      label: CCBOX 版本与系统
+      placeholder: 例如 0.3.0 / Windows 11 x64 或 macOS 15 ARM64
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: 开发模式
+      options: [沙箱开发, 本机开发, 尚未启动]
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤、期望结果和实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 脱敏错误摘要
+      description: 删除用户名、项目路径、代理地址、密码、令牌和账号信息后再粘贴。

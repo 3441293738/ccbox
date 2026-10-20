@@ -1,0 +1,1 @@
+"""CCBOX desktop controller."""
