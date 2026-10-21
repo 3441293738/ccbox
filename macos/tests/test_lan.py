@@ -8,7 +8,7 @@ from unittest.mock import patch, Mock, AsyncMock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT/'runtime')]
-from app.lan import private_ipv4, validate_access, desktop_ports, apply_access, sharing_details
+from app.lan import private_ipv4, validate_access, desktop_ports, apply_access, sharing_details, local_addresses
 from app.controller import make_compose, DEFAULT
 from gateway import Gateway
 
@@ -29,6 +29,11 @@ def reader(data):
 
 
 class AccessConfigTests(unittest.TestCase):
+    def test_mac_discovery_ignores_broadcast_and_peer_addresses(self):
+        with patch('app.lan.sys.platform','darwin'), patch('app.lan.subprocess.run') as run:
+            run.side_effect=[Mock(stdout=''),Mock(stdout=''),Mock(stdout='inet 192.168.1.20 netmask 255.255.255.0 broadcast 192.168.1.255\ninet 127.0.0.1\ninet 10.0.0.2 --> 10.0.0.1')]
+            self.assertEqual(local_addresses(),['192.168.1.20','10.0.0.2'])
+
     def test_only_explicit_private_ipv4(self):
         for address in ('10.0.0.10', '172.16.1.20', '192.168.1.20'):
             self.assertTrue(private_ipv4(address))

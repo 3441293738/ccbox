@@ -56,7 +56,11 @@ def local_addresses():
     for command in commands:
         try:
             output = subprocess.run(command, capture_output=True, text=True, timeout=8, creationflags=flags).stdout
-            values.extend(re.findall(r'(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])', output))
+            if command[0] == '/sbin/ifconfig':
+                # Only interface addresses, never broadcast/peer/netmask values.
+                values.extend(re.findall(r'\binet\s+((?:\d{1,3}\.){3}\d{1,3})\b', output))
+            else:
+                values.extend(re.findall(r'(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])', output))
         except (OSError, subprocess.TimeoutExpired):
             pass
     if not values:
