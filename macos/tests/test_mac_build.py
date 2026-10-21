@@ -44,7 +44,7 @@ class MacBuildTests(unittest.TestCase):
     def test_selftest_requires_independent_ca_bundle_and_strict_tls(self):
         good = dict(gui_init='PASS', frozen=True, runtime_sidecar=True, guided_start_ui=True,
                     sandbox_editor_ui=True, multi_project_ui=True, isolated_environments_ui=True, clipboard_support=True,
-                    host_development_ui=True)
+                    host_development_ui=True, lan_access_ui=True)
         tls = dict(bundled_ca=True, bundled_ca_count=100, certificate_required=True, hostname_check=True)
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp)/'result.json'
@@ -55,6 +55,9 @@ class MacBuildTests(unittest.TestCase):
                     build.assert_selftest(path)
             path.write_text(json.dumps({**good, 'tls': tls}), encoding='utf-8')
             self.assertEqual(build.assert_selftest(path)['tls'], tls)
+            path.write_text(json.dumps({**good, 'lan_access_ui': False, 'tls': tls}), encoding='utf-8')
+            with self.assertRaises(RuntimeError):
+                build.assert_selftest(path)
 
     def test_existing_output_is_preserved(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(build, 'require_native_mac'):
