@@ -196,7 +196,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
         note.grid(row=4,column=0,sticky='ew',padx=16,pady=16)
         text(note,'本地优先',size=13,weight='bold').pack(anchor='w',padx=14,pady=(14,5))
         text(note,'独立资料 · 显式代理\n隔离效果以检测为准',size=11,color=C['muted']).pack(anchor='w',padx=14,pady=(0,14))
-        text(side,'Mac M 系列  /  0.3.2',size=10,color=C['subtle']).grid(row=5,column=0,sticky='w',padx=26,pady=(0,24))
+        text(side,'Mac M 系列  /  0.3.3',size=10,color=C['subtle']).grid(row=5,column=0,sticky='w',padx=26,pady=(0,24))
         main = self.frame(self)
         main.grid(row=0,column=1,sticky='nsew',padx=(28,24),pady=(20,16))
         main.grid_columnconfigure(0,weight=1)
@@ -1072,7 +1072,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
             return
         first=repair or not ready(self.c)
         if first and not messagebox.askyesno('准备沙箱 VS Code',
-                '首次准备会下载组件；旧环境升级文字 / 图片剪贴板组件会重启当前沙箱。请先保存容器中的工作。\n\n'
+                '首次准备会下载组件；旧环境升级自适应显示 / 剪贴板组件会重启当前沙箱。请先保存容器中的工作。\n\n'
                 '项目、账号和代理资料会保留；只处理当前账号环境。\n'
                 'VS Code 在容器内运行；为兼容容器，Electron 内层沙箱不启用，Docker 隔离保持开启。\n\n'
                 '准备好后继续？',parent=self):

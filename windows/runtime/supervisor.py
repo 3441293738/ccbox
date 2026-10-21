@@ -32,9 +32,14 @@ def main():
     (home / 'browser/user.js').write_text(
         'user_pref("intl.accept_languages", ' + json.dumps(languages) + ');\n')
     launch(['python3', '/opt/ccbox/bridge.py'])
-    launch(['Xvfb', ':99', '-screen', '0', '1440x900x24', '-nolisten', 'tcp'], 1)
+    # One X/VNC server supports native SetDesktopSize: no stretched fixed canvas.
+    # VNC stays on container loopback, behind the authenticated desktop gateway.
+    # Clipboard transfer remains an explicit, bounded action via control.sock.
+    launch(['Xtigervnc', ':99', '-geometry', '1440x900', '-depth', '24',
+            '-localhost', '-rfbport', '5900', '-SecurityTypes', 'None',
+            '-AlwaysShared', '-AcceptSetDesktopSize=1',
+            '-AcceptCutText=0', '-SendCutText=0', '-nolisten', 'tcp'], 1)
     launch(['openbox'], .5)
-    launch(['x11vnc', '-display', ':99', '-localhost', '-forever', '-shared', '-nopw', '-rfbport', '5900'])
     launch(['websockify', '--web=/usr/share/novnc', '127.0.0.1:6081', '127.0.0.1:5900'])
     launch(['firefox-esr', '--profile', str(home / 'browser'), 'file:///opt/ccbox/browser-check.html'])
     print('sandbox ready; network=none; browser at remote desktop', flush=True)

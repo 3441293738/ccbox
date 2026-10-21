@@ -3,12 +3,13 @@
 <title>CCBOX · 沙箱 VS Code</title>
 <style>
 :root{color-scheme:dark;--bg:#101716;--card:#1b2525;--line:#354746;--text:#edf4f1;--muted:#adc2ba;--accent:#b6f1d2}
-*{box-sizing:border-box}body{margin:0;height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:14px system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;height:100vh;height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:14px system-ui,sans-serif;overflow:hidden}
 header{display:flex;align-items:center;gap:14px;padding:10px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .brand{font-weight:750;letter-spacing:.08em}.label{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
 .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}button{border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);padding:10px 14px;cursor:pointer;min-height:44px;font:inherit;touch-action:manipulation}
 button:hover{background:#30443c}button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}button:disabled{opacity:.55;cursor:default}.primary{background:var(--accent);color:#132c21}.primary:hover{background:#d2ffe5}
-#screen{flex:1;min-height:0;overflow:auto;position:relative}footer{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:8px 18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+#screen{flex:1;min-height:0;min-width:0;overflow:auto;position:relative;display:flex;align-items:center;justify-content:center}#display{width:100%;height:100%;max-width:3840px;max-height:2160px;overflow:hidden;flex-shrink:0}header,footer{flex-shrink:0}footer{display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap;padding:8px 18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+select{min-height:44px;max-width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:inherit;cursor:pointer}select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}#display-info{font-variant-numeric:tabular-nums}footer details{margin-left:auto}footer summary{cursor:pointer;min-height:24px;line-height:24px}footer details[open]{width:100%;margin-left:0}footer details p{margin:4px 0}.actions{min-width:0}.actions label{display:flex;align-items:center;gap:6px;margin:0}
 #status{color:var(--accent)}#reconnect{min-height:30px;padding:4px 12px}dialog{width:min(540px,90vw);border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--text);padding:24px}dialog::backdrop{background:#0009}
 textarea{width:100%;min-height:140px;resize:vertical;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:12px;font:inherit}h2{margin-top:0;font-size:19px}p{color:var(--muted);line-height:1.7}.dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
 @media(max-width:800px){header{padding:8px}.label{max-width:160px}.actions{margin-left:0}button{padding:8px 10px}footer{padding:6px 10px}}
@@ -17,9 +18,9 @@ textarea{width:100%;min-height:140px;resize:vertical;background:var(--bg);color:
 #image-paste{min-height:76px}.dialog-actions{flex-wrap:wrap}dialog{max-height:90vh;overflow:auto}label{display:block;margin-bottom:8px}
 </style></head><body>
 <header><span class="brand">CCBOX</span><span>沙箱 VS Code</span><span class="label" id="label"></span>
-<div class="actions"><button id="restore" disabled aria-describedby="restore-help" title="找回当前沙箱里已最小化或被遮住的 VS Code 窗口">恢复 VS Code</button><button id="claude" disabled title="在沙箱中按 F9 打开 Claude 面板">Claude 面板</button><button id="clipboard" disabled>发送文字</button><button id="image" disabled title="选择或粘贴一张图片写入沙箱剪贴板">发送图片</button><input id="image-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden aria-label="选择要发送到沙箱的图片"><button id="scale" aria-pressed="true">适应窗口</button><button id="fullscreen" class="primary">全屏工作</button></div></header>
-<main id="screen" aria-label="沙箱远程桌面"></main>
-<footer><span id="status" role="status" aria-live="polite">正在连接沙箱桌面…</span><button id="reconnect" hidden>重新连接</button><span id="restore-help">最小化后点「恢复 VS Code」；已关闭则回 CCBOX 点「打开 / 恢复 VS Code」。关闭此页不会停止环境。</span></footer>
+<div class="actions"><button id="restore" disabled aria-describedby="restore-help" title="找回当前沙箱里已最小化或被遮住的 VS Code 窗口">恢复 VS Code</button><button id="claude" disabled title="在沙箱中按 F9 打开 Claude 面板">Claude 面板</button><button id="clipboard" disabled>发送文字</button><button id="image" disabled title="选择或粘贴一张图片写入沙箱剪贴板">发送图片</button><input id="image-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden aria-label="选择要发送到沙箱的图片"><select id="scale" aria-label="桌面显示方式" aria-describedby="display-help"><option value="auto">自动铺满</option><option value="follow">跟随画面</option><option value="native">原始大小</option></select><label for="quality">画质<select id="quality"><option value="9">高清</option><option value="6">流畅</option></select></label><button id="fullscreen" class="primary">全屏工作</button></div></header>
+<main id="screen" aria-label="沙箱远程桌面"><div id="display"></div></main>
+<footer><span id="status" role="status" aria-live="polite">正在连接沙箱桌面…</span><button id="reconnect" hidden>重新连接</button><span id="display-info" role="status" aria-live="polite"></span><details><summary>显示与操作帮助</summary><p id="display-help">自动铺满：按页面可用空间调整桌面分辨率（最高 3840 × 2160），不拉伸画面。高清优先清晰度，网络慢时选流畅。同一环境多设备共享桌面：最后调整窗口的设备决定分辨率，旁观设备可选「跟随画面」。高分屏文字偏小，可在沙箱 VS Code 的「查看 → 外观」中放大。</p><p id="restore-help">最小化后点「恢复 VS Code」；已关闭则回 CCBOX 点「打开 / 恢复 VS Code」。关闭此页不会停止环境。</p></details></footer>
 <dialog id="clip" aria-labelledby="text-title"><h2 id="text-title">发送文字到沙箱</h2>
 <p>先粘贴文字，再确认发送。支持中文、多行和特殊符号；只写入沙箱剪贴板，不会执行文字中的命令。</p>
 <label for="text">待发送文字</label><textarea id="text" placeholder="在此粘贴文字" aria-describedby="text-status"></textarea>
@@ -36,7 +37,46 @@ textarea{width:100%;min-height:140px;resize:vertical;background:var(--bg);color:
 import RFB from './core/rfb.js';
 const $=id=>document.getElementById(id), label=new URLSearchParams(location.search).get('environment')||'当前环境';
 $('label').textContent=label; document.title='CCBOX · 沙箱 VS Code · '+label;
-let rfb,fit=true,connected=false,restoring=false,clipboardBusy=false,imageBusy=false,imageBlob=null,previewURL='',imageGeneration=0;
+let rfb,connected=false,restoring=false,clipboardBusy=false,imageBusy=false,imageBlob=null,previewURL='',imageGeneration=0;
+let resizeTimer,displayTimer,resizeWarningTimer,lastSize='',windowActive=true;
+function displayInfo(){
+ const canvas=$('display').querySelector('canvas');
+ if(!connected||!canvas?.width||!canvas?.height){$('display-info').textContent='';return;}
+ const mode=$('scale').value,box=$('display').getBoundingClientRect();
+ const matched=Math.abs(canvas.width-Math.floor(box.width))<=2&&Math.abs(canvas.height-Math.floor(box.height))<=2;
+ $('display-info').textContent=`${canvas.width} × ${canvas.height} · ${$('quality').value==='9'?'高清':'流畅'} · ${mode==='auto'?(matched?'已适应窗口':'正在适应窗口…'):mode==='follow'?'跟随画面':'原始大小'}`;
+ clearTimeout(resizeWarningTimer);
+ if(mode==='auto'&&!matched&&!document.hidden&&windowActive){
+  resizeWarningTimer=setTimeout(()=>{
+   if(connected&&$('scale').value==='auto')$('display-info').textContent=`${canvas.width} × ${canvas.height} · 尚未匹配窗口：旧环境请在 CCBOX「准备 / 修复」升级显示组件。`;
+  },5000);
+ }
+}
+function applyDisplay(){
+ if(!rfb)return;
+ const mode=$('scale').value;
+ rfb.clipViewport=false;rfb.scaleViewport=mode!=='native';
+ rfb.qualityLevel=Number($('quality').value);rfb.compressionLevel=2;
+ const resize=connected&&mode==='auto'&&!document.hidden&&windowActive;
+ const canvas=$('display').querySelector('canvas'),box=$('display').getBoundingClientRect();
+ const matched=canvas&&Math.abs(canvas.width-Math.floor(box.width))<=2&&Math.abs(canvas.height-Math.floor(box.height))<=2;
+ if(rfb.resizeSession!==resize||(resize&&!matched))rfb.resizeSession=resize;
+ displayInfo();
+}
+function scheduleResize(){
+ clearTimeout(resizeTimer);
+ resizeTimer=setTimeout(()=>{if($('display').clientWidth>0&&$('display').clientHeight>0)applyDisplay();},600);
+}
+// Observe the available drawing area, not screen hardware / host fingerprints.
+// The public noVNC API sends bounded CSS viewport dimensions only, not DPR.
+new ResizeObserver(entries=>{
+ const rect=entries[0].contentRect,size=Math.floor(rect.width)+'x'+Math.floor(rect.height);
+ if(size===lastSize)return;lastSize=size;scheduleResize();
+}).observe($('display'));
+new MutationObserver(()=>{clearTimeout(displayTimer);displayTimer=setTimeout(displayInfo,120);}).observe($('display'),{subtree:true,childList:true,attributes:true,attributeFilter:['width','height']});
+document.addEventListener('visibilitychange',()=>{applyDisplay();if(!document.hidden)scheduleResize();});
+window.addEventListener('focus',()=>{windowActive=true;scheduleResize();});
+window.addEventListener('blur',()=>{windowActive=false;if(rfb)rfb.resizeSession=false;displayInfo();});
 function controls(){
  $('restore').disabled=!connected||restoring;$('claude').disabled=!connected;
  $('clipboard').disabled=!connected||clipboardBusy;$('image').disabled=!connected||clipboardBusy;
@@ -48,20 +88,21 @@ function controls(){
 function state(text,failed=false){$('status').textContent=text;$('reconnect').hidden=!failed;}
 function connect(){
  connected=false;controls();
- if(rfb){rfb.disconnect();$('screen').replaceChildren();}
+ if(rfb){rfb.disconnect();$('display').replaceChildren();}
  state('正在连接沙箱桌面…');
  try{
-  const next=new RFB($('screen'),`${location.protocol==='https:'?'wss':'ws'}://${location.host}/websockify`);rfb=next;
-  next.scaleViewport=fit;next.resizeSession=false;next.clipViewport=true;next.background='#101716';
-  next.addEventListener('connect',()=>{if(rfb!==next)return;connected=true;controls();state('桌面已连接');$('reconnect').hidden=true;next.focus();});
-  next.addEventListener('disconnect',()=>{if(rfb!==next)return;connected=false;controls();state('桌面连接已断开；环境可能已停止。',true);});
+  const next=new RFB($('display'),`${location.protocol==='https:'?'wss':'ws'}://${location.host}/websockify`);rfb=next;
+  next.background='#101716';applyDisplay();
+  next.addEventListener('connect',()=>{if(rfb!==next)return;connected=true;controls();applyDisplay();scheduleResize();state('桌面已连接');$('reconnect').hidden=true;next.focus();});
+  next.addEventListener('disconnect',()=>{if(rfb!==next)return;connected=false;controls();displayInfo();state('桌面连接已断开；环境可能已停止。',true);});
   next.addEventListener('securityfailure',()=>{if(rfb!==next)return;connected=false;controls();state('桌面认证失败，请从 CCBOX 重新打开。',true);});
  }catch(e){state('桌面连接未成功，请从 CCBOX 重新打开。',true);}
 }
 $('reconnect').onclick=connect;
-$('scale').onclick=()=>{fit=!fit;if(rfb)rfb.scaleViewport=fit;$('scale').setAttribute('aria-pressed',String(fit));$('scale').textContent=fit?'适应窗口':'原始大小';};
+$('scale').onchange=()=>{applyDisplay();scheduleResize();};
+$('quality').onchange=applyDisplay;
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();rfb?.focus();}catch(e){state('浏览器未进入全屏，可使用浏览器自己的全屏功能。');}};
-document.addEventListener('fullscreenchange',()=>{$('fullscreen').textContent=document.fullscreenElement?'退出全屏':'全屏工作';});
+document.addEventListener('fullscreenchange',()=>{$('fullscreen').textContent=document.fullscreenElement?'退出全屏':'全屏工作';scheduleResize();});
 $('claude').onclick=()=>{rfb?.sendKey(0xffc6,'F9');rfb?.focus();};
 $('restore').onclick=async()=>{
  if(!connected||restoring)return;

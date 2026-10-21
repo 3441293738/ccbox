@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 
 from .storage import atomic_json
 
-REVISION = '2'
+REVISION = '3'
 LABEL = 'io.ccbox.desktop-editor'
 SCRIPT = '/home/claude/.ccbox/runtime/sandbox_editor.py'
 
@@ -41,7 +41,7 @@ def upgrade(controller):
     for service in ('sandbox', 'gateway'):
         image = services[service]['image'] + ':latest'
         image_id = controller.run([controller.docker(), 'image', 'inspect', '--format', '{{.Id}}', image])
-        backup = services[service]['image'] + ':before-desktop-v2'
+        backup = services[service]['image'] + ':before-desktop-v3'
         controller.run([controller.docker(), 'tag', image_id, backup])
         backups[image] = backup
     controller.log('1/4 准备桌面依赖镜像；当前环境暂时继续运行。镜像构建使用 Docker 的下载网络。')
@@ -62,7 +62,7 @@ def upgrade(controller):
                 controller.run([controller.docker(), 'tag', backup, image])
             controller.start()
         except Exception:
-            raise RuntimeError('桌面升级未完成，自动恢复也未完成。原镜像 before-desktop-v2 和登录卷均已保留，请检查 Docker 日志。') from first
+            raise RuntimeError('桌面升级未完成，自动恢复也未完成。原镜像 before-desktop-v3 和登录卷均已保留，请检查 Docker 日志。') from first
         raise RuntimeError('桌面升级启动失败，已恢复原镜像与环境；登录卷保持不变。') from first
 
 

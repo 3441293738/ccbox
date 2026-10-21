@@ -233,7 +233,7 @@ class OrchestrationTests(unittest.TestCase):
         self.c.build_images.side_effect=RuntimeError('build')
         with self.assertRaises(RuntimeError):host.upgrade(self.c)
         self.c.stop.assert_not_called();self.c.start.assert_not_called()
-        self.assertEqual(sum('before-desktop-v2' in str(a) for a in self.c.run.call_args_list),4)
+        self.assertEqual(sum('before-desktop-v3' in str(a) for a in self.c.run.call_args_list),4)
 
     def test_start_failure_rolls_back_original_images(self):
         self.c.start.side_effect=[RuntimeError('failed'),None]

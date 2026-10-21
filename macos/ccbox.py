@@ -51,7 +51,7 @@ if __name__ == '__main__':
                   'editor_directory_field': True,
                   'data_migration_field': True, 'one_click_editor': True,
                   'multi_project_ui': True, 'isolated_environments_ui': True, 'sandbox_editor_ui': True,
-                  'lan_access_ui': True, 'host_development_ui': True, 'guided_start_ui': True, 'collapsible_settings': True, 'version': '0.3.2-macos-arm64',
+                  'lan_access_ui': True, 'host_development_ui': True, 'guided_start_ui': True, 'collapsible_settings': True, 'version': '0.3.3-macos-arm64',
                   'tls': tls_diagnostics(),
                   'restore_toolbar': (ROOT / 'runtime/window_restore.py').is_file() and 'id="restore"' in (ROOT / 'runtime/desktop.html').read_text(encoding='utf-8'),
                   'clipboard_support': (ROOT / 'runtime/clipboard_transfer.py').is_file() and "uploadClipboard('text',value)" in (ROOT / 'runtime/desktop.html').read_text(encoding='utf-8'),

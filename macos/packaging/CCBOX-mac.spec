@@ -32,6 +32,6 @@ exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='CCBOX', console=False
           target_arch='arm64', codesign_identity=os.environ.get('CCBOX_SIGN_IDENTITY') or None)
 coll = COLLECT(exe, a.binaries, a.datas, name='CCBOX')
 app = BUNDLE(coll, name='CCBOX.app', bundle_identifier='com.ccbox.desktop',
-             info_plist={'CFBundleDisplayName':'CCBOX', 'CFBundleShortVersionString':'0.3.2',
-                         'CFBundleVersion':'8', 'NSHighResolutionCapable':True,
+             info_plist={'CFBundleDisplayName':'CCBOX', 'CFBundleShortVersionString':'0.3.3',
+                         'CFBundleVersion':'9', 'NSHighResolutionCapable':True,
                          'NSAppleEventsUsageDescription':'仅在你点击打开 Claude 终端时，打开当前沙箱的交互终端。'})

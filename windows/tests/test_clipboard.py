@@ -163,7 +163,7 @@ class ClipboardContractTests(unittest.TestCase):
 
     def test_runtime_revision_and_components_match(self):
         from app.sandbox_editor import REVISION
-        self.assertEqual(REVISION,'2')
+        self.assertEqual(REVISION,'3')
         for name in ['Dockerfile.sandbox','Dockerfile.gateway']:
             content=(ROOT/'runtime'/name).read_text(encoding='utf-8')
             self.assertIn('io.ccbox.desktop-editor="'+REVISION+'"',content)
