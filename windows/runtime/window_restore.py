@@ -163,7 +163,7 @@ class X11:
         self.lib.XCloseDisplay(self.display)
 
 
-def restore(display=':99', matches=managed_pid):
+def restore(display=':99', matches=managed_pid, *, maximize=False):
     x = X11(display)
     try:
         windows = x.values(x.root, '_NET_CLIENT_LIST_STACKING') or x.values(x.root, '_NET_CLIENT_LIST')
@@ -175,6 +175,9 @@ def restore(display=':99', matches=managed_pid):
             if desktop and desktop[0] != 0xffffffff:
                 x.send(x.root, '_NET_CURRENT_DESKTOP', desktop[0], 0)
             x.send(window, '_NET_WM_STATE', 0, x.atom('_NET_WM_STATE_SHADED'), 0, 2)
+            if maximize:
+                x.send(window, '_NET_WM_STATE', 1, x.atom('_NET_WM_STATE_MAXIMIZED_VERT'),
+                       x.atom('_NET_WM_STATE_MAXIMIZED_HORZ'), 2)
             x.lib.XMapRaised(x.display, window)
             x.send(window, '_NET_ACTIVE_WINDOW', 2, 0, 0)
             x.lib.XSync(x.display, 0)
@@ -190,4 +193,4 @@ if __name__ == '__main__':
     elif sys.argv[1:]:
         raise SystemExit('Unexpected arguments')
     else:
-        print('Restore requested' if restore() else 'No managed editor window')
+        print('Restore requested' if restore(maximize=True) else 'No managed editor window')

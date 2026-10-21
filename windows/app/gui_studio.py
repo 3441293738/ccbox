@@ -194,7 +194,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
         note.grid(row=4,column=0,sticky='ew',padx=16,pady=16)
         text(note,'本地优先',size=13,weight='bold').pack(anchor='w',padx=14,pady=(14,5))
         text(note,'独立资料 · 显式代理\n隔离效果以检测为准',size=11,color=C['muted']).pack(anchor='w',padx=14,pady=(0,14))
-        text(side,'桌面版  /  0.3.3',size=10,color=C['subtle']).grid(row=5,column=0,sticky='w',padx=26,pady=(0,24))
+        text(side,'桌面版  /  0.3.4',size=10,color=C['subtle']).grid(row=5,column=0,sticky='w',padx=26,pady=(0,24))
         main = self.frame(self)
         main.grid(row=0,column=1,sticky='nsew',padx=(28,24),pady=(20,16))
         main.grid_columnconfigure(0,weight=1)

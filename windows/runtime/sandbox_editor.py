@@ -400,7 +400,7 @@ def launch(workspace):
         status = processes()
         if status['desktop_main'] and status['desktop_renderer']:
             from window_restore import restore
-            restore()
+            restore(maximize=True)
             print('VS Code 主程序和界面进程已在沙箱内启动。', flush=True)
             print(json.dumps(status), flush=True)
             return

@@ -123,6 +123,18 @@ class IdentityTests(unittest.TestCase):
 
 class RestoreTests(unittest.TestCase):
     @patch('window_restore.X11')
+    def test_explicit_restore_maximizes_only_managed_editor(self, cls):
+        x = cls.return_value
+        x.root = 1
+        x.values.side_effect = lambda w, n: {(1, '_NET_CLIENT_LIST_STACKING'):[8, 9],
+            (8, '_NET_WM_PID'):[100], (9, '_NET_WM_PID'):[200]}.get((w, n), [])
+        x.atom.side_effect = lambda name: name
+        self.assertTrue(restore.restore(matches=lambda pid: pid == 100, maximize=True))
+        x.send.assert_any_call(8, '_NET_WM_STATE', 1, '_NET_WM_STATE_MAXIMIZED_VERT',
+                              '_NET_WM_STATE_MAXIMIZED_HORZ', 2)
+        self.assertFalse(any(call.args[0] == 9 for call in x.send.call_args_list))
+
+    @patch('window_restore.X11')
     def test_activates_only_matching_window_and_preserves_geometry(self, cls):
         x = cls.return_value
         x.root = 1
