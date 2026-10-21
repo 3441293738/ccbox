@@ -1,5 +1,5 @@
 FROM python:3.12-slim-bookworm
-COPY gateway.py transport.py clipboard_transfer.py desktop.html /opt/ccbox/
+COPY gateway.py transport.py clipboard_transfer.py desktop.html desktop-login.html /opt/ccbox/
 LABEL io.ccbox.desktop-editor="2"
 RUN mkdir -p /ipc /desktop && chown 1000:1000 /desktop
 WORKDIR /opt/ccbox

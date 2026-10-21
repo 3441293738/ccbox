@@ -28,7 +28,7 @@ def run(args, log, timeout=600, cwd=ROOT):
 def assert_selftest(path):
     report = json.loads(path.read_text(encoding='utf-8'))
     if report.get('gui_init') != 'PASS' or any(report.get(k) is not True for k in (
-            'frozen', 'runtime_sidecar', 'host_development_ui', 'guided_start_ui',
+            'frozen', 'runtime_sidecar', 'lan_access_ui', 'host_development_ui', 'guided_start_ui',
             'sandbox_editor_ui', 'multi_project_ui', 'isolated_environments_ui', 'clipboard_support')):
         raise RuntimeError('Packaged GUI/runtime self-test failed')
 

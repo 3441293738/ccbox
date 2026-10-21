@@ -27,9 +27,10 @@ class FormError(ValueError):
 
 
 from .development_ui import DevelopmentUI
+from .lan_ui import LanUI
 
 
-class App(DevelopmentUI, ctk.CTk):
+class App(DevelopmentUI, LanUI, ctk.CTk):
     def __init__(self, controller=None):
         ctk.set_appearance_mode('dark')
         super().__init__(fg_color=C['bg'])
@@ -195,7 +196,7 @@ class App(DevelopmentUI, ctk.CTk):
         note.grid(row=4,column=0,sticky='ew',padx=16,pady=16)
         text(note,'本地优先',size=13,weight='bold').pack(anchor='w',padx=14,pady=(14,5))
         text(note,'独立资料 · 显式代理\n隔离效果以检测为准',size=11,color=C['muted']).pack(anchor='w',padx=14,pady=(0,14))
-        text(side,'Mac M 系列  /  0.3.0',size=10,color=C['subtle']).grid(row=5,column=0,sticky='w',padx=26,pady=(0,24))
+        text(side,'Mac M 系列  /  0.3.1',size=10,color=C['subtle']).grid(row=5,column=0,sticky='w',padx=26,pady=(0,24))
         main = self.frame(self)
         main.grid(row=0,column=1,sticky='nsew',padx=(28,24),pady=(20,16))
         main.grid_columnconfigure(0,weight=1)
@@ -311,6 +312,7 @@ class App(DevelopmentUI, ctk.CTk):
         r=self.action_row(editor)
         self.sandbox_editor_button=self.add_action(r,'打开 / 恢复 VS Code  →',self.start_development,True,width=250)
         self.add_action(r,'第一次怎么用？',self.quick_help,width=145)
+        self.add_action(r, "局域网访问", self.open_lan_settings, width=120)
         self.development_actions(editor)
         wrapped(editor,'项目和登录资料会保留。本机开发需保持 CCBOX 打开，关闭会断开并停止本机任务。',size=12).pack(fill='x',pady=(12,0))
         f=self.card(p,'开始前，只需两项设置')
@@ -485,6 +487,7 @@ class App(DevelopmentUI, ctk.CTk):
         wrapped(f,'同一个环境内的 Claude 可访问所有已挂载项目，单独打开不减少访问权限。不同账号挂载同一目录时文件仍然共享；需独立副本时请选择不同目录。',size=12,color=C['warning']).pack(fill='x',pady=(14,0))
         self.add_action(self.action_row(p),'返回首页开始开发  →',lambda:self.show('概览'),True,width=200)
         text(p,'不确定的设置保持默认即可',size=13,color=C['subtle']).pack(anchor='w',pady=(24,12))
+        self.lan_settings(p)
         f=self.disclosure(p,'storage','数据存储与迁移','工具配置与 Docker 磁盘分开管理。迁移会先复制、校验，再切换位置；原数据目录保留为备份。')
         wrapped(f,'当前工具数据目录',size=12,color=C['subtle']).pack(fill='x')
         wrapped(f,'',textvariable=self.storage_current,size=12).pack(fill='x',pady=(4,14))

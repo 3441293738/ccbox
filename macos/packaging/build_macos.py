@@ -36,7 +36,7 @@ def run(args, log, *, env=None, timeout=600, cwd=None):
 
 def assert_selftest(path):
     report = json.loads(path.read_text(encoding='utf-8'))
-    required = ('frozen', 'runtime_sidecar', 'guided_start_ui', 'sandbox_editor_ui',
+    required = ('frozen', 'runtime_sidecar', 'lan_access_ui', 'guided_start_ui', 'sandbox_editor_ui',
                 'multi_project_ui', 'isolated_environments_ui', 'clipboard_support', 'host_development_ui')
     if report.get('gui_init') != 'PASS' or any(report.get(k) is not True for k in required):
         raise RuntimeError('Packaged application self-test did not pass all required checks.')

@@ -17,6 +17,7 @@ from . import vault
 from .editor_paths import normalize_editor_directory, write_editor_configs
 from .storage import data_location, migration_target, copy_verified, atomic_json, POINTER
 from .environments import Environments
+from .lan import validate_access, desktop_ports, access_mounts
 from .projects import normalize_projects, overlaps, mounts, signature, workspace_document, same_bind_source
 
 ROOT = Path(sys.executable).parent if getattr(sys, 'frozen', False) else Path(__file__).resolve().parents[1]
@@ -27,11 +28,12 @@ ZONES = ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_A
          'Europe/London', 'Europe/Berlin', 'Asia/Tokyo', 'Asia/Singapore', 'Australia/Sydney', 'UTC']
 LANGUAGES = {'en_US.UTF-8': 'en-US,en', 'en_GB.UTF-8': 'en-GB,en', 'ja_JP.UTF-8': 'ja,en-US,en'}
 DEFAULT = dict(workspace='', vscode_dir='', readonly=False, timezone='America/New_York', locale='en_US.UTF-8',
-               desktop_port=6080, cpus=2, memory_gb=4, claude_version='latest')
+               desktop_port=6080, cpus=2, memory_gb=4, claude_version='latest', lan_enabled=False, lan_address='')
 
 
 def validate(config):
     c = {**DEFAULT, **config}
+    c.update(validate_access(c))
     if not isinstance(c['workspace'], str) or not Path(c['workspace']).expanduser().is_absolute():
         raise ValueError('请选择项目文件夹的完整绝对路径。')
     p = Path(c['workspace']).expanduser().resolve()
@@ -70,9 +72,9 @@ def make_compose(root, data, config, project):
         'services': {
             'gateway': {**common, 'build': {'context': str(root / 'runtime'), 'dockerfile': 'Dockerfile.gateway'},
                         'image': f'{project}-gateway', 'pull_policy': 'never', 'mem_limit': '256m', 'pids_limit': 128,
-                        'ports': [f'127.0.0.1:{c["desktop_port"]}:6080'],
+                        'ports': desktop_ports(c),
                         'tmpfs': ['/tmp:rw,nosuid,nodev,noexec,size=32m'],
-                        'volumes': ['ipc:/ipc', 'desktop:/desktop:ro',
+                        'volumes': ['ipc:/ipc', 'desktop:/desktop:ro', *access_mounts(root),
                                     bind(root / 'runtime/desktop.html', '/opt/ccbox/desktop.html'),
                                     bind(data / 'active/upstream.json', '/run/secrets/upstream.json')],
                         'healthcheck': {'test': ['CMD', 'python3', '-c',
@@ -244,7 +246,7 @@ class Controller:
         vault.protect_directory(self.data / 'active')
         secret_file = self.data / 'active/upstream.json'
         secret_file.write_text(json.dumps({'proxy': cred['proxy'], 'desktop_token': cred['desktop_token'],
-                                          'desktop_port': c['desktop_port']}), encoding='utf-8')
+                                          'desktop_port': c['desktop_port'], **validate_access(c)}), encoding='utf-8')
         (self.data / 'resolv.conf').write_text('nameserver 127.0.0.1\noptions timeout:1 attempts:1\n', encoding='ascii')
         policies = json.loads((self.root / 'runtime/firefox-policies.json').read_text(encoding='utf-8'))
         policies['policies']['Preferences']['intl.accept_languages']['Value'] = LANGUAGES[c['locale']]

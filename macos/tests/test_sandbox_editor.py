@@ -280,6 +280,8 @@ class ViewerGatewayTests(unittest.IsolatedAsyncioTestCase):
         self.addCleanup(server.close)
         port=server.sockets[0].getsockname()[1]
         gateway.desktop_port=port
+        gateway.hosts={f"127.0.0.1:{port}"}
+        gateway.cookie_name=f"ccbox_session_{port}"
         reader,writer=await asyncio.open_connection('127.0.0.1',port)
         headers=f'GET {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n'
         if cookie:headers+='Cookie: '+gateway.cookie_name+'=TOKEN\r\n'

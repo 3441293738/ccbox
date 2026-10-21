@@ -3,6 +3,8 @@ import asyncio
 import hmac
 import json
 import os
+import ipaddress
+import time
 from http.cookies import SimpleCookie
 from pathlib import Path
 from urllib.parse import urlsplit, parse_qs, urlencode
@@ -42,10 +44,17 @@ def parse_request(raw):
 
 
 class Gateway:
-    def __init__(self, proxy, desktop_token="", desktop_port=6080):
+    def __init__(self, proxy, desktop_token="", desktop_port=6080, lan_enabled=False, lan_address=""):
         self.proxy = proxy
         self.desktop_token = desktop_token
         self.desktop_port = desktop_port
+        self.hosts = {f'127.0.0.1:{desktop_port}'}
+        if lan_enabled:
+            address = ipaddress.IPv4Address(lan_address)
+            if not any(address in ipaddress.ip_network(n) for n in ('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16')):
+                raise ValueError('LAN address must be private IPv4')
+            self.hosts.add(f'{address}:{desktop_port}')
+        self.login_attempts = {}
         # Cookies ignore TCP ports: distinct names avoid cross-environment overwrites.
         self.cookie_name = 'ccbox_session_' + str(desktop_port)
         self.slots = asyncio.Semaphore(128)
@@ -96,16 +105,21 @@ class Gateway:
             if upstream:
                 upstream.close()
 
+    def valid_origin(self, target, headers, required=False):
+        if not target.startswith('/') or target.startswith('//') or '\\' in target or any(ord(c) < 32 for c in target):
+            return False
+        d = {k.lower(): v for k, v in headers}
+        host = d.get('host', '')
+        return host in self.hosts and d.get('origin', '' if required else 'http://' + host) == 'http://' + host
+
     def desktop_auth(self, target, headers):
-        if not self.desktop_token or not target.startswith('/') or target.startswith('//'):
+        if not self.desktop_token or not self.valid_origin(target, headers):
             return False, False
         d = {k.lower(): v for k, v in headers}
-        expected = f"127.0.0.1:{self.desktop_port}"
-        if d.get("host") != expected or d.get("origin", "http://" + expected) != "http://" + expected:
-            return False, False
         q = parse_qs(urlsplit(target).query)
         supplied = q.get("access", [""])[0]
-        if supplied and hmac.compare_digest(supplied, self.desktop_token):
+        # Keep legacy one-click local launch; LAN credentials are POST-only.
+        if d.get('host') == f'127.0.0.1:{self.desktop_port}' and supplied and hmac.compare_digest(supplied.encode(), self.desktop_token.encode()):
             return True, True
         cookie = SimpleCookie()
         try:
@@ -113,21 +127,72 @@ class Gateway:
             supplied = cookie[self.cookie_name].value
         except Exception:
             return False, False
-        return hmac.compare_digest(supplied, self.desktop_token), False
+        return hmac.compare_digest(supplied.encode(), self.desktop_token.encode()), False
+
+    async def login_page(self, writer, status='200 OK', error=False):
+        body = Path('/opt/ccbox/desktop-login.html').read_text(encoding='utf-8')
+        body = body.replace('<!--ERROR-->', '<p class="error" role="alert">口令不正确，请从 CCBOX 重新复制。频繁尝试时请稍后再试。</p>' if error else '')
+        body = body.encode('utf-8')
+        writer.write((f'HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\n'
+                      'Cache-Control: no-store\r\nReferrer-Policy: no-referrer\r\nX-Frame-Options: DENY\r\n'
+                      "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'\r\n"
+                      f'Content-Length: {len(body)}\r\nConnection: close\r\n\r\n').encode() + body)
+        await writer.drain()
+
+    async def login(self, reader, writer, headers):
+        if not self.desktop_token or not self.valid_origin('/login', headers, required=True):
+            return await self.clipboard_response(writer, b'403 Forbidden')
+        fields = {k.lower(): v for k, v in headers}
+        size = fields.get('content-length', '')
+        if 'transfer-encoding' in fields or not size.isascii() or not size.isdecimal() or not 0 < int(size) <= 512:
+            return await self.clipboard_response(writer, b'400 Bad Request')
+        if fields.get('content-type', '').split(';')[0] != 'application/x-www-form-urlencoded':
+            return await self.clipboard_response(writer, b'415 Unsupported Media Type')
+        now = time.monotonic()
+        peer = writer.get_extra_info('peername')
+        key = peer[0] if peer else 'unknown'
+        self.login_attempts = {k: v for k, v in self.login_attempts.items() if now-v[0] < 60}
+        first, count = self.login_attempts.get(key, (now, 0))
+        if count >= 10 or (key not in self.login_attempts and len(self.login_attempts) >= 128):
+            return await self.login_page(writer, '429 Too Many Requests', True)
+        self.login_attempts[key] = first, count+1
+        try:
+            data = await asyncio.wait_for(reader.readexactly(int(size)), 10)
+            form = parse_qs(data.decode('utf-8'), max_num_fields=2)
+            supplied = form.get('access', [])
+            ok = len(supplied) == 1 and hmac.compare_digest(supplied[0].encode(), self.desktop_token.encode())
+        except (ValueError, UnicodeError, asyncio.IncompleteReadError, asyncio.TimeoutError):
+            ok = False
+        if not ok:
+            return await self.login_page(writer, '403 Forbidden', True)
+        self.login_attempts.pop(key, None)
+        writer.write((f'HTTP/1.1 303 See Other\r\nLocation: /desktop.html\r\n'
+                      f'Set-Cookie: {self.cookie_name}={self.desktop_token}; HttpOnly; SameSite=Strict; Path=/\r\n'
+                      'Cache-Control: no-store\r\nReferrer-Policy: no-referrer\r\nContent-Length: 0\r\nConnection: close\r\n\r\n').encode())
+        await writer.drain()
 
     async def handle_desktop(self, r, w):
         upstream = None
         try:
             method, target, version, headers = parse_request(await header(r))
+            if not self.valid_origin(target, headers):
+                return await self.clipboard_response(w, b'403 Forbidden')
             ok, initial = self.desktop_auth(target, headers)
             path = urlsplit(target).path
+            if method == 'POST' and path == '/login':
+                return await self.login(r, w, headers)
+            local_host = dict((k.lower(), v) for k, v in headers).get('host') == f'127.0.0.1:{self.desktop_port}'
+            if not ok and method == 'GET' and path in ('/', '/desktop.html', '/login') and (not local_host or path == '/login'):
+                return await self.login_page(w)
+            if desktop_websocket(headers) and not self.valid_origin(target, headers, required=True):
+                return await self.clipboard_response(w, b'403 Forbidden')
             if not ok or (method != "GET" and not (method == "POST" and path in ('/clipboard/image', '/clipboard/text'))):
                 w.write(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
                 await w.drain()
                 return
             if method == 'POST':
                 fields = {k.lower(): v for k, v in headers}
-                if initial or fields.get('origin') != f'http://127.0.0.1:{self.desktop_port}':
+                if initial or not self.valid_origin(target, headers, required=True):
                     await self.clipboard_response(w, b'403 Forbidden', b'origin required')
                     return
                 async with self.clipboard_slots:
@@ -254,7 +319,8 @@ def desktop_transport_headers(headers):
 
 async def main():
     config = json.loads(Path("/run/secrets/upstream.json").read_text())
-    g = Gateway(config["proxy"], config["desktop_token"], config["desktop_port"])
+    g = Gateway(config["proxy"], config["desktop_token"], config["desktop_port"],
+                config.get('lan_enabled', False), config.get('lan_address', ''))
     socket = Path("/ipc/proxy.sock")
     socket.unlink(missing_ok=True)
     server = await asyncio.start_unix_server(g.handle_proxy, str(socket), limit=65536)

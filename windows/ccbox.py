@@ -15,6 +15,9 @@ if __name__ == '__main__':
             for name in app.pages:
                 app.show(name)
                 app.update_idletasks()
+            assert 'lan_address' in app.fields
+            assert app.values['lan_enabled'].get() is False
+            assert callable(app.apply_lan) and callable(app.show_lan_connection)
             assert 'vscode_dir' in app.fields
             assert 'data_dir' in app.fields
             assert app.values['vscode_dir'].get() == ''
@@ -47,7 +50,7 @@ if __name__ == '__main__':
                   'editor_directory_field': True,
                   'data_migration_field': True, 'one_click_editor': True,
                   'multi_project_ui': True, 'isolated_environments_ui': True, 'sandbox_editor_ui': True,
-                  'host_development_ui': True, 'guided_start_ui': True, 'collapsible_settings': True, 'version': '0.3.0',
+                  'lan_access_ui': True, 'host_development_ui': True, 'guided_start_ui': True, 'collapsible_settings': True, 'version': '0.3.1',
                   'restore_toolbar': (ROOT / 'runtime/window_restore.py').is_file() and 'id="restore"' in (ROOT / 'runtime/desktop.html').read_text(encoding='utf-8'),
                   'clipboard_support': (ROOT / 'runtime/clipboard_transfer.py').is_file() and "uploadClipboard('text',value)" in (ROOT / 'runtime/desktop.html').read_text(encoding='utf-8'),
                   'runtime_sidecar': (ROOT / 'runtime/Dockerfile.sandbox').is_file()}
