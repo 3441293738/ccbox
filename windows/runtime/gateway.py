@@ -133,8 +133,10 @@ class Gateway:
         body = Path('/opt/ccbox/desktop-login.html').read_text(encoding='utf-8')
         body = body.replace('<!--ERROR-->', '<p class="error" role="alert">口令不正确，请从 CCBOX 重新复制。频繁尝试时请稍后再试。</p>' if error else '')
         body = body.encode('utf-8')
+        # Native form POSTs turn Origin into "null" under no-referrer. Keep the
+        # same-origin context without sending referrers to other origins.
         writer.write((f'HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\n'
-                      'Cache-Control: no-store\r\nReferrer-Policy: no-referrer\r\nX-Frame-Options: DENY\r\n'
+                      'Cache-Control: no-store\r\nReferrer-Policy: same-origin\r\nX-Frame-Options: DENY\r\n'
                       "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'\r\n"
                       f'Content-Length: {len(body)}\r\nConnection: close\r\n\r\n').encode() + body)
         await writer.drain()
@@ -173,8 +175,10 @@ class Gateway:
 
     async def handle_desktop(self, r, w):
         upstream = None
+        route = 'request'
         try:
             method, target, version, headers = parse_request(await header(r))
+            route = 'login' if urlsplit(target).path == '/login' else 'desktop'
             if not self.valid_origin(target, headers):
                 return await self.clipboard_response(w, b'403 Forbidden')
             ok, initial = self.desktop_auth(target, headers)
@@ -211,6 +215,14 @@ class Gateway:
                 w.write(b"HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
                 await w.drain()
                 return
+            if path in ('/', '/login'):
+                # An already authenticated visitor must not be sent to the
+                # upstream static-file server's non-existent /login path.
+                w.write(b'HTTP/1.1 303 See Other\r\nLocation: /desktop.html\r\n'
+                        b'Cache-Control: no-store\r\nReferrer-Policy: no-referrer\r\n'
+                        b'Content-Length: 0\r\nConnection: close\r\n\r\n')
+                await w.drain()
+                return
             if urlsplit(target).path == '/desktop.html':
                 body = Path('/opt/ccbox/desktop.html').read_bytes()
                 w.write(("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n"
@@ -244,9 +256,23 @@ class Gateway:
                 while data := await asyncio.wait_for(ur.read(65536), 30):
                     w.write(data)
                     await w.drain()
-        except Exception:
+        except Exception as error:
+            # Only a fixed route label and exception class. Never log request
+            # headers, URLs, cookies, form data, access tokens or exception text.
+            print(f'desktop unavailable: route={route}; error={type(error).__name__}', flush=True)
             try:
-                w.write(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                body = ('<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
+                        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+                        '<title>CCBOX · 暂时连接异常</title><body><main>'
+                        '<h1>桌面网关暂时连接异常</h1>'
+                        '<p>请稍等几秒后重新打开登录页。若仍出现此提示，请检查 CCBOX 的环境状态。</p>'
+                        '<p><a href="/login">重新打开登录页</a></p>'
+                        '<p>此提示不代表账号失效；不需要清空登录资料或重建项目。</p>'
+                        '</main></body></html>').encode('utf-8')
+                w.write((f'HTTP/1.1 503 Service Unavailable\r\nContent-Type: text/html; charset=utf-8\r\n'
+                         'Cache-Control: no-store\r\nReferrer-Policy: no-referrer\r\nX-Frame-Options: DENY\r\n'
+                         "Content-Security-Policy: default-src 'none'; base-uri 'none'; frame-ancestors 'none'\r\n"
+                         f'Content-Length: {len(body)}\r\nConnection: close\r\n\r\n').encode() + body)
                 await w.drain()
             except Exception:
                 pass

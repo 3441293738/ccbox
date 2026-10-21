@@ -81,6 +81,8 @@ class AccessHttpTests(unittest.IsolatedAsyncioTestCase):
         result=await self.call(self.gateway())
         self.assertIn(b'200 OK',result);self.assertNotIn(TOKEN.encode(),result)
         self.assertIn(b"form-action 'self'",result)
+        self.assertIn(b'Referrer-Policy: same-origin\r\n',result)
+        self.assertNotIn(b'Referrer-Policy: no-referrer\r\n',result)
 
     async def test_login_and_cookie_without_credential_in_location(self):
         result=await self.call(self.gateway(),'POST','/login',origin='http://'+HOST,data=('access='+TOKEN).encode())
@@ -90,10 +92,29 @@ class AccessHttpTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(b'?access=',result)
 
     async def test_login_requires_origin_correct_token_and_known_host(self):
-        for origin,host,token in [(None,HOST,TOKEN),('http://evil.invalid',HOST,TOKEN),('http://'+HOST,'evil.invalid',TOKEN),('http://'+HOST,HOST,'wrong')]:
+        for origin,host,token in [(None,HOST,TOKEN),('null',HOST,TOKEN),('http://evil.invalid',HOST,TOKEN),('http://'+HOST,'evil.invalid',TOKEN),('http://'+HOST,HOST,'wrong')]:
             with self.subTest(origin=origin,host=host):
                 result=await self.call(self.gateway(),'POST','/login',host=host,origin=origin,data=('access='+token).encode())
                 self.assertIn(b'403',result); self.assertNotIn(b'Set-Cookie:',result)
+
+    async def test_authenticated_login_and_root_redirect_without_upstream(self):
+        for path in ('/login','/','/login?next=//evil.invalid'):
+            with self.subTest(path=path), patch('gateway.open_unix_connection',new=AsyncMock()) as connect:
+                result=await self.call(self.gateway(),path=path,cookie='ccbox_session_6080='+TOKEN)
+                self.assertIn(b'303 See Other',result)
+                self.assertIn(b'Location: /desktop.html\r\n',result)
+                self.assertNotIn(TOKEN.encode(),result)
+                connect.assert_not_called()
+
+    async def test_unavailable_page_has_recovery_link_and_redacted_diagnostics(self):
+        with patch('gateway.open_unix_connection',side_effect=OSError('SECRET '+TOKEN)), patch('builtins.print') as log:
+            result=await self.call(self.gateway(),path='/core/rfb.js',cookie='ccbox_session_6080='+TOKEN)
+        self.assertIn(b'503 Service Unavailable',result)
+        self.assertIn(b'href="/login"',result)
+        self.assertNotIn(TOKEN.encode(),result)
+        self.assertNotIn(TOKEN,str(log.call_args))
+        self.assertNotIn('SECRET',str(log.call_args))
+        log.assert_called_once_with('desktop unavailable: route=desktop; error=OSError',flush=True)
 
     async def test_lan_query_token_is_not_a_login(self):
         result=await self.call(self.gateway(),path='/desktop.html?access='+TOKEN)
