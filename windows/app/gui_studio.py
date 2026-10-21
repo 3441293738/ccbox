@@ -26,10 +26,11 @@ class FormError(ValueError):
 
 from .development_ui import DevelopmentUI
 from .lan_ui import LanUI
+from .spaces_ui import SpacesUI
 
 
-class App(DevelopmentUI, LanUI, ctk.CTk):
-    def __init__(self, controller=None):
+class App(SpacesUI, DevelopmentUI, LanUI, ctk.CTk):
+    def __init__(self, controller=None, *, monitor_spaces=True):
         ctk.set_appearance_mode('dark')
         super().__init__(fg_color=C['bg'])
         self.title('CCBOX · 本地隔离工作台')
@@ -39,6 +40,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
         self.geometry(f'{max(980,width)}x{max(660,height)}')
         self.minsize(980, 660)
         self.c = controller or Controller()
+        self.monitor_spaces = monitor_spaces
         self.messages = queue.Queue()
         self.c.log = lambda value: self.messages.put(('log', value))
         self.busy = False
@@ -85,7 +87,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
             var.trace_add('write', self.mark_dirty)
         for var in self.proxy_vars.values():
             var.trace_add('write', self.proxy_changed)
-        self.show('概览')
+        self.show('账号空间')
         self.bind('<Control-s>', lambda _: self.save())
         for index, name in enumerate(self.pages, 1):
             self.bind(f'<Alt-Key-{index}>', lambda _, n=name: self.show(n))
@@ -184,7 +186,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
         text(side,'工作空间',size=11,color=C['subtle']).grid(row=1,column=0,sticky='w',padx=26,pady=(0,12))
         nav = self.frame(side)
         nav.grid(row=2,column=0,sticky='ew',padx=14)
-        for i,(key,title) in enumerate([('概览','开始使用'),('环境配置','项目文件'),('网络连接','代理设置'),('隔离检查','检查与修复')],1):
+        for i,(key,title) in enumerate([('账号空间','账号空间'),('概览','当前空间'),('环境配置','项目文件'),('网络连接','代理设置'),('隔离检查','检查与修复')],1):
             b = self.button(nav, f'0{i}    {title}', lambda n=key:self.show(n), track=False, anchor='w', width=180)
             b.configure(fg_color=C['sidebar'], border_color=C['sidebar'], hover_color=C['raised'])
             b.base_border = C['sidebar']
@@ -194,7 +196,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
         note.grid(row=4,column=0,sticky='ew',padx=16,pady=16)
         text(note,'本地优先',size=13,weight='bold').pack(anchor='w',padx=14,pady=(14,5))
         text(note,'独立资料 · 显式代理\n隔离效果以检测为准',size=11,color=C['muted']).pack(anchor='w',padx=14,pady=(0,14))
-        text(side,'桌面版  /  0.3.4',size=10,color=C['subtle']).grid(row=5,column=0,sticky='w',padx=26,pady=(0,24))
+        text(side,'桌面版  /  0.3.5',size=10,color=C['subtle']).grid(row=5,column=0,sticky='w',padx=26,pady=(0,24))
         main = self.frame(self)
         main.grid(row=0,column=1,sticky='nsew',padx=(28,24),pady=(20,16))
         main.grid_columnconfigure(0,weight=1)
@@ -211,8 +213,9 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
         self.subtitle=wrapped(heading,'',size=13)
         self.subtitle.pack(fill='x',pady=(6,0))
         switcher=self.frame(heading,C['card'],corner_radius=10)
+        self.space_switcher=switcher
         switcher.pack(fill='x',pady=(12,0))
-        text(switcher,'当前独立空间',size=12,color=C['muted']).pack(side='left',padx=(14,10))
+        text(switcher,'当前账号空间',size=12,color=C['muted']).pack(side='left',padx=(14,10))
         self.environment_menu=ctk.CTkComboBox(switcher,variable=self.environment_label,values=['默认环境'],
             command=self.switch_environment,state='readonly',height=40,width=230,font=(FONT,13),
             fg_color=C['field'],border_color=C['border'],text_color=C['text'],dropdown_fg_color=C['raised'])
@@ -241,7 +244,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
         for name in self.nav:
             self.pages[name]=self.frame(self.scroller)
             self.pages[name].grid(row=0,column=0,sticky='nsew',padx=0)
-        for name, builder in [('概览',self.overview),('网络连接',self.network),('环境配置',self.environment),('隔离检查',self.checks)]:
+        for name, builder in [('账号空间',self.spaces_page),('概览',self.overview),('网络连接',self.network),('环境配置',self.environment),('隔离检查',self.checks)]:
             self.building_page=name
             builder()
         self.bottom=self.frame(main,C['card'],corner_radius=12,border_width=1,border_color=C['divider'])
@@ -357,7 +360,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
         self.sandbox_editor_button.configure(text=label)
         self.setup_text['hint'].set(hint)
         if hasattr(self,'bottom'):
-            if self.current_page=='概览' and not self.dirty:
+            if self.current_page in ('概览','账号空间') and not self.dirty:
                 self.bottom.grid_remove()
             else:
                 self.bottom.grid()
@@ -422,7 +425,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
     def stop_environment(self):
         if self.busy:
             return
-        if messagebox.askyesno('停止当前独立空间','会关闭当前空间的浏览器、编辑器和终端。请先保存工作。\n项目和账号登录资料保留；其他空间继续运行。\n\n确定停止？',parent=self):
+        if messagebox.askyesno('停止账号空间',f'仅停止「{self.c.environment_name}」。会关闭该空间的浏览器、编辑器和终端。请先保存工作。\n项目和账号登录资料保留；其他空间继续运行。\n\n确定停止？',parent=self):
             self.disconnect_host(quiet=True)
             self.task('停止环境',self.c.stop,self.stopped)
 
@@ -432,9 +435,9 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
             '2. 填写代理\n在「代理设置」粘贴连接信息，测试后核对结果。\n\n'
             '3. 开始开发\n回到首页，点击「打开 / 恢复 VS Code」。自动保存、准备并打开沙箱 VS Code。\n'
             '首次请自行确认项目是否可信，再打开 Claude 面板登录。已有容器登录可继续使用。\n\n'
-            '切换账号：上方切换独立空间，再点「打开 / 恢复 VS Code」。已打开的窗口仍属于原空间。\n'
+            '多个账号：在「账号空间」新建，每张卡单独打开或停止。多个沙箱可同时运行，切换不停止其他沙箱。\n'
             '找回窗口：页面顶部点「恢复 VS Code」；窗口已关闭时，回 CCBOX 点「打开 / 恢复 VS Code」。\n'
-            '结束使用：直接关闭窗口会保留运行；要节省资源，在首页「更多打开方式与停止」中停止。',parent=self)
+            '结束使用：关闭窗口会保留沙箱运行；要节省资源，在「账号空间」停止对应卡片。本机执行通道会随 CCBOX 关闭而断开。',parent=self)
 
     def network(self):
         p=self.pages['网络连接']
@@ -602,8 +605,14 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
             p.grid_remove()
         self.pages[name].grid()
         self.current_page=name
+        if name=='账号空间':
+            self.space_switcher.pack_forget()
+            self.refresh_spaces()
+        elif not self.space_switcher.winfo_manager():
+            self.space_switcher.pack(fill='x',pady=(12,0))
         headings={
-            '概览':('开始使用','选好项目和代理，接下来交给 CCBOX。','首页'),
+            '账号空间':('账号空间','多个沙箱可同时运行。点哪张卡，就操作哪个空间。','账号'),
+            '概览':('当前空间','这里的项目、代理和操作，只属于上方选中的账号空间。','开发'),
             '网络连接':('代理设置','每个独立空间使用自己的代理。测试连通后，再回首页开始开发。','网络'),
             '环境配置':('项目文件','只共享你选中的文件夹；其他设置按需展开。','项目'),
             '隔离检查':('检查与修复','看懂状态、找到问题，再决定是否修复。','帮助')}
@@ -700,11 +709,16 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
         self.environment_label.set(name)
         self.environment_name_label.set(f'操作对象：{name}  ·  {self.c.environment_id}')
         self.title(f'CCBOX · {name} · 本地隔离工作台')
+        self.spaces_selection_changed()
 
     def can_change_environment(self):
         if self.busy:
             return False
-        if self.dirty and not messagebox.askyesno('切换账号环境','当前有未保存修改。放弃这些修改并继续？\n运行中的容器和登录资料不变。',parent=self):
+        if self.dirty and not messagebox.askyesno('切换账号空间','当前有未保存修改。放弃这些修改并继续？\n运行中的容器和登录资料不变。',parent=self):
+            return False
+        session=getattr(self,'host_session',None)
+        if session and not session.closed.is_set() and not messagebox.askyesno('切换账号空间',
+                '切换不会停止沙箱，但会断开当前本机执行通道并停止本机任务。继续？',parent=self):
             return False
         return True
 
@@ -771,21 +785,21 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
     def create_environment(self):
         if not self.can_change_environment():
             return
-        name=simpledialog.askstring('新建独立环境','环境名称（例如：工作账号 B）\n新环境不复制任何登录、代理或项目配置。',parent=self)
+        name=simpledialog.askstring('新建账号空间','空间备注（例如：工作账号 B）\n新环境不复制任何登录、代理或项目配置。',parent=self)
         if name is None:
             return
         try:
             key=Environments(self.c.root).create(name)
             self.load_environment(key)
-            self.show('网络连接')
-            self.notify('新环境已创建。先配置代理与项目并保存，再启动、登录；原环境资料保留。')
+            self.show('概览')
+            self.notify('账号空间已创建。按页面提示选择项目、填写代理，然后启动并登录；原空间继续运行。')
         except Exception as e:
             self.notify(str(e),error=True)
 
     def rename_environment(self):
         if self.busy:
             return
-        name=simpledialog.askstring('重命名环境','仅修改显示名称，不更换容器或登录资料。',initialvalue=self.c.environment_name,parent=self)
+        name=simpledialog.askstring('重命名账号空间','仅修改显示名称，不更换容器或登录资料。',initialvalue=self.c.environment_name,parent=self)
         if name is not None:
             try:
                 Environments(self.c.root).rename(self.c.environment_id,name)
@@ -1058,6 +1072,7 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
             b.configure(state='disabled' if value else 'normal')
         for w,normal in self.inputs:
             w.configure(state='disabled' if value else normal)
+        self.spaces_busy_state()
         if not value:
             self.zone_button.configure(state='normal' if self.suggested_zone else 'disabled')
 
@@ -1105,6 +1120,9 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
             # A large build log must not starve paint, keyboard or progress events.
             for _ in range(80):
                 kind,value=self.messages.get_nowait()
+                if kind=='spaces_status':
+                    self.spaces_received(value)
+                    continue
                 if kind=='host_approval':
                     self.show_host_approval(value)
                     continue
@@ -1144,8 +1162,12 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
                     if title not in ('隔离检查','断网测试','代理测试'):
                         self.notify(result)
                 self.refresh_setup()
+                self.space_refresh_at=0
+                self.refresh_spaces()
         except queue.Empty:
             pass
+        if self.current_page=='账号空间':
+            self.refresh_spaces()
         self._poll_id=self.after(100,self.poll)
 
     def help(self):
@@ -1156,10 +1178,11 @@ class App(DevelopmentUI, LanUI, ctk.CTk):
             messagebox.showinfo('任务进行中','请等待当前任务完成后关闭。',parent=self)
             return
         warning='有未保存修改。关闭后这些修改将丢失。\n\n' if self.dirty else ''
-        if messagebox.askokcancel('关闭 CCBOX',warning+'关闭窗口不会停止容器；本机执行连接会断开，并停止本机任务。需要停止容器时，请在首页展开「更多打开方式与停止」。',parent=self):
+        if messagebox.askokcancel('关闭 CCBOX',warning+'关闭窗口不会停止容器；本机执行连接会断开，并停止本机任务。需要停止容器时，请在「账号空间」停止对应卡片。',parent=self):
             self.destroy()
 
     def destroy(self):
+        self.space_destroyed=True
         self.disconnect_host(quiet=True)
         if hasattr(self,'_poll_id'):
             self.after_cancel(self._poll_id)

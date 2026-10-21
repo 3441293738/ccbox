@@ -42,7 +42,7 @@ class MacBuildTests(unittest.TestCase):
         self.assertEqual(env['SSL_CERT_DIR'], str(Path('/tmp/test-home/missing-system-ca-dir')))
 
     def test_selftest_requires_independent_ca_bundle_and_strict_tls(self):
-        good = dict(gui_init='PASS', frozen=True, runtime_sidecar=True, guided_start_ui=True,
+        good = dict(account_dashboard=True, gui_init='PASS', frozen=True, runtime_sidecar=True, guided_start_ui=True,
                     sandbox_editor_ui=True, multi_project_ui=True, isolated_environments_ui=True, clipboard_support=True,
                     host_development_ui=True, lan_access_ui=True)
         tls = dict(bundled_ca=True, bundled_ca_count=100, certificate_required=True, hostname_check=True)

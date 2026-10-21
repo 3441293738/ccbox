@@ -74,7 +74,9 @@ def local_addresses():
 def access_mounts(root):
     return [{'type': 'bind', 'source': str(Path(root)/'runtime'/name), 'target': '/opt/ccbox/'+name,
              'read_only': True, 'bind': {'create_host_path': False}}
-            for name in ('gateway.py', 'desktop-login.html')]
+            # Bind the complete Python dependency set as one version. Older images
+            # predate clipboard_transfer; mounting only gateway.py broke startup.
+            for name in ('gateway.py', 'transport.py', 'clipboard_transfer.py', 'desktop-login.html')]
 
 
 def apply_access(controller, *, rotate=False):

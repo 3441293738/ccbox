@@ -11,7 +11,7 @@ if __name__ == '__main__':
         from app.controller import Controller, ROOT
         from transport import tls_diagnostics
         with tempfile.TemporaryDirectory() as tmp:
-            app = App(Controller(tmp))
+            app = App(Controller(tmp), monitor_spaces=False)
             app.withdraw()
             for name in app.pages:
                 app.show(name)
@@ -46,12 +46,15 @@ if __name__ == '__main__':
             assert app.c.environment_id == key and app.proxy_vars['password'].get() == ''
             app.load_environment('default')
             assert len(app.environment_options) == 2
+            assert len(app.space_cards) == 2 and '账号空间' in app.pages
+            app.show('账号空间')
+            assert not app.space_switcher.winfo_manager()
             app.destroy()
-        result = {'gui_init': 'PASS', 'pages': 4, 'frozen': bool(getattr(sys, 'frozen', False)),
-                  'editor_directory_field': True,
+        result = {'gui_init': 'PASS', 'pages': 5, 'frozen': bool(getattr(sys, 'frozen', False)),
+                  'account_dashboard': True, 'editor_directory_field': True,
                   'data_migration_field': True, 'one_click_editor': True,
                   'multi_project_ui': True, 'isolated_environments_ui': True, 'sandbox_editor_ui': True,
-                  'lan_access_ui': True, 'host_development_ui': True, 'guided_start_ui': True, 'collapsible_settings': True, 'version': '0.3.4-macos-arm64',
+                  'lan_access_ui': True, 'host_development_ui': True, 'guided_start_ui': True, 'collapsible_settings': True, 'version': '0.3.5-macos-arm64',
                   'tls': tls_diagnostics(),
                   'restore_toolbar': (ROOT / 'runtime/window_restore.py').is_file() and 'id="restore"' in (ROOT / 'runtime/desktop.html').read_text(encoding='utf-8'),
                   'clipboard_support': (ROOT / 'runtime/clipboard_transfer.py').is_file() and "uploadClipboard('text',value)" in (ROOT / 'runtime/desktop.html').read_text(encoding='utf-8'),

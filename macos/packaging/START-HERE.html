@@ -1,9 +1,9 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>CCBOX 0.3.4 · 开始使用</title>
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>CCBOX 0.3.5 · 开始使用</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>body{font:17px/1.8 system-ui,sans-serif;max-width:760px;margin:60px auto;padding:0 24px;color:#22332b;background:#f4f8f5}h1,h2{line-height:1.4}li{margin:12px 0}aside{border-left:4px solid #ab8036;padding:8px 20px;background:#fff8e9}a{color:#156647}</style>
-<h1>CCBOX 0.3.4 · 开始使用</h1><p>选账号、选项目，打开独立开发空间。已打包版本自带 Python，无需自行制作。</p>
+<h1>CCBOX 0.3.5 · 开始使用</h1><p>选账号、选项目，打开独立开发空间。已打包版本自带 Python，无需自行制作。</p>
 <ol><li>安装并启动 Docker Desktop，使用 Linux 容器。Mac 选择 Apple silicon 版本。</li><li>Windows 完整解压后双击 CCBOX.exe，保留旁边的 runtime；Mac 将 CCBOX.app 放入应用程序。</li><li>在 CCBOX 选择独立空间、项目目录和代理，保存并测试。</li><li>保持默认“沙箱开发”，点击“打开 / 恢复 VS Code”。首次镜像和编辑器下载需要等待。</li><li>核对自己的项目可信后，在沙箱内完成 Claude 官方登录。授权网页使用该沙箱浏览器。</li></ol>
-<h2>在另一台电脑上使用</h2><p>首页点“局域网访问”，检测本机地址，开启后保存并应用。点“查看连接信息”复制地址与口令。远端可操作整个桌面；HTTP 不加密，仅用于可信局域网，不做公网转发。</p>
+<h2>多个账号怎么用？</h2><p>首页“账号空间”一张卡对应一套账号资料。先为每个空间配置项目与代理，再点“启动并打开”；已运行的直接点“打开 VS Code”。多个沙箱可以同时运行，切换不停止其他沙箱。“停止”只停止对应空间，保留登录资料。空间名称是备注，不是已验证的登录身份；同一共享项目的文件修改会互相可见。</p><h2>在另一台电脑上使用</h2><p>首页点“局域网访问”，检测本机地址，开启后保存并应用。点“查看连接信息”复制地址与口令。远端可操作整个桌面；HTTP 不加密，仅用于可信局域网，不做公网转发。</p>
 <h2>需要已有 JDK、Maven 或 Node？</h2><p>选中项目后切换“本机开发”。CCBOX 需要保持打开；每条本机命令先显示完整内容，由你确认一次才执行。Claude 登录与模型继续在容器；普通 Bash 仍在容器，不会透明改成本机命令。首次启用后新建 Claude 会话或重新连接 ccbox-host MCP。</p>
 <aside><strong>本机模式的权限</strong><p>本机命令与项目脚本拥有当前用户权限，可能读取系统信息、凭据文件及其他目录，输出可进入模型上下文。本机命令使用本机网络，不自动继承模型代理。工作目录不是系统隔离。切换账号、项目、模式或关闭 CCBOX 会断开本机通道并停止托管任务，不回滚已有修改。</p></aside>
 <h2>日常操作</h2><p>最小化后点桌面顶部“恢复 VS Code”；编辑器已关闭则回 CCBOX 点“打开 / 恢复 VS Code”。“发送文字 / 图片”在你明确确认后写入沙箱剪贴板，再到沙箱输入框按 Ctrl+V；不会自动发送消息或同步宿主剪贴板。</p>

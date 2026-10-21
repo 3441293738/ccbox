@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory() as tmp:
     extra.mkdir()
     c=Controller(base/'bundle')
     c.save({**DEFAULT,'workspace':str(project)},parse_proxy('socks5h://SERIAL:TOKEN@HOST:1080'))
-    app=App(c)
+    app=App(c, monitor_spaces=False)
     errors=[]
     app.report_callback_exception=lambda *args:errors.append(args)
     app.withdraw()
@@ -62,6 +62,40 @@ with tempfile.TemporaryDirectory() as tmp:
         assert app.proxy_vars['password'].get()=='TOKEN'
         assert app.values['workspace'].get()==str(project)
         assert app.project_items==[]  # discarded edits were not silently saved
+        # Account cards use captured IDs and never stop a space just to switch.
+        from app.spaces import catalog_rows
+        rows=catalog_rows(app.c.root)
+        for row in rows:
+            row.update(state='running', status='运行中', detail='测试数据')
+        app.render_spaces(rows)
+        assert len(app.space_cards)==2
+        app.show('账号空间')
+        assert not app.space_switcher.winfo_manager()
+        with patch.object(Controller,'stop') as stop, patch.object(app,'start_development') as open_editor:
+            app.space_action(key,'open')
+            assert app.c.environment_id==key
+            open_editor.assert_called_once()
+            stop.assert_not_called()
+        app.show('账号空间')
+        with patch('app.gui_studio.messagebox.askyesno',return_value=True),patch.object(app,'task') as task:
+            app.space_action('default','stop')
+            assert app.c.environment_id=='default'
+            assert task.call_args.args[1].__self__.environment_id=='default'
+        app.dirty=True
+        with patch('app.gui_studio.messagebox.askyesno',return_value=False),patch.object(app,'start_development') as launch:
+            app.space_action(key,'open')
+            assert app.c.environment_id=='default'
+            launch.assert_not_called()
+        app.dirty=False
+        app.set_busy(True)
+        app.space_action(key,'settings')
+        assert app.c.environment_id=='default'
+        assert app.space_cards[key]['open'].cget('state')=='disabled'
+        app.set_busy(False)
+        assert app.space_cards[key]['open'].cget('state')=='normal'
+        before=app.space_cards[key]['name'].cget('text')
+        app.spaces_received(('different root','wrong data',[],False))
+        assert app.space_cards[key]['name'].cget('text')==before
         for scale in (1.0,1.5):
             import customtkinter as ctk
             ctk.set_widget_scaling(scale)

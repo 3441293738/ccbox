@@ -9,7 +9,7 @@ from app.gui import App
 from app.controller import Controller
 
 with tempfile.TemporaryDirectory() as tmp:
-    app = App(Controller(Path(tmp) / 'bundle'))
+    app = App(Controller(Path(tmp) / 'bundle'), monitor_spaces=False)
     app.withdraw()
     for size in ('1120x820', '920x700'):
         app.geometry(size)
@@ -71,4 +71,4 @@ with tempfile.TemporaryDirectory() as tmp:
     app.reveal_log()
     assert app.log_visible
     app.destroy()
-print('GUI smoke PASS: 4 pages, two window sizes, directory picker/cancel/default/validation, compact errors + full log')
+print('GUI smoke PASS: 5 pages, two window sizes, directory picker/cancel/default/validation, compact errors + full log')
